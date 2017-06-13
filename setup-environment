@@ -187,9 +187,9 @@ your images, you need to read and accept the following...
 
 EOF
 
-    sleep 4
+    sleep 2
 
-    more -d $CWD/sources/meta-fsl-arm/EULA
+    more -d $CWD/sources/meta-freescale/EULA
     echo
     REPLY=
     while [ -z "$REPLY" ]; do
