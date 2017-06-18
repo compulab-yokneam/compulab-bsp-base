@@ -1,8 +1,25 @@
 #!/bin/bash
+# -*- mode: shell-script; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Add options for the script
+# Copyright (C) 2013 Freescale Semiconductor, Inc.
 
 CWD=$(pwd)
 PROGNAME=$0
-[ $(basename $BASH_SOURCE) == $(basename $0) ] && EXIT="exit" || EXIT="return"
+[ $(basename -- $BASH_SOURCE) == $(basename -- $0) ] && EXIT="exit" || EXIT="return"
 
 if [ "$(whoami)" = "root" ]; then
     echo "ERROR: do not use the BSP as root. Exiting..."
@@ -11,31 +28,65 @@ fi
 
 usage()
 {
+    SMSRC='sources/*/conf/machine/*.conf'
+    FDSRC='sources/meta-freescale-distro/conf/distro/fslc-*.conf'
+    PDSRC='sources/poky/meta-poky/conf/distro/*.conf'
+
+    stat ${SMSRC} >/dev/null 2>&1
+    [ $? -ne 0 ] && ${EXTI} 10
+
+    stat ${FDSRC} >/dev/null 2>&1
+    [ $? -ne 0 ] && ${EXTI} 11
+
+    stat ${PDSRC} >/dev/null 2>&1
+    [ $? -ne 0 ] && ${EXTI} 12
+
+sm=$(ls ${SMSRC} | awk -F"/" '($0="\t"$NF)&&(gsub(/\.conf$/,""))')
+fd=$(ls ${FDSRC} | awk -F"/" '($0="\t"$NF)&&(gsub(/\.conf$/,""))')
+pd=$(ls ${PDSRC} | awk -F"/" '($0="\t"$NF)&&(gsub(/\.conf$/,""))')
+
 cat << eom
-	Usage: source $PROGNAME <build-dir>
-	<build-dir>: specifies the build directory location (required)
-	If undefined, this script will set \$MACHINE to 'cl-som-imx6'.
-eom
+Usage: MACHINE=<machine> DISTRO=<distro> source $PROGNAME <build-dir>
+Usage:                                   source $PROGNAME <build-dir>
+    <machine>    machine name
+    <distro>     distro name
+    <build-dir>  build directory
 
-smach=$(ls sources/*/conf/machine/*.conf | awk -F"/" '($0="\t"$NF)&&(gsub(/\.conf$/,""))')
+The first usage is for creating a new build directory. In this case, the
+script creates the build directory <build-dir>, configures it for the
+specified <machine> and <distro>, and prepares the calling shell for running
+bitbake on the build directory.
 
-cat << eom
-	------------------
-	Supported machines:
-	------------------
-${smach}
+The second usage is for using an existing build directory. In this case,
+the script prepares the calling shell for running bitbake on the build
+directory <build-dir>. The build directory configuration is unchanged.
 
-	To build for a machine listed above, run this script as:
-	MACHINE=<machine> source $PROGNAME <build-dir>
+Supported machines:
+${sm}
+
+Supported Freescale's distros:
+${fd}
+
+Available Poky's distros:
+${pd}
+
+Examples:
+
+- To create a new Yocto build directory:
+  $ MACHINE=cl-som-imx6 DISTRO=fslc-x11 source $PROGNAME build
+
+- To use an existing Yocto build directory:
+  $ source $PROGNAME build
+
 eom
 }
 
 clean_up()
 {
-	unset EULA LIST_MACHINES VALID_MACHINE
-	unset CWD TEMPLATES SHORTOPTS LONGOPTS ARGS PROGNAME
-	unset generated_config updated
-	unset MACHINE SDKMACHINE DISTRO OEROOT
+   unset EULA LIST_MACHINES VALID_MACHINE
+   unset CWD TEMPLATES SHORTOPTS LONGOPTS ARGS PROGNAME
+   unset generated_config updated
+   unset MACHINE SDKMACHINE DISTRO OEROOT
 }
 
 # get command line options
@@ -46,8 +97,8 @@ ARGS=$(getopt --options $SHORTOPTS  \
   --longoptions $LONGOPTS --name $PROGNAME -- "$@" )
 # Print the usage menu if invalid options are specified
 if [ $? != 0 -o $# -lt 1 ]; then
-	usage && clean_up
-	${EXIT} 1
+   usage && clean_up
+   ${EXIT} 1
 fi
 
 eval set -- "$ARGS"
@@ -66,50 +117,33 @@ do
     esac
 done
 
-[ -z "$MACHINE" ] && MACHINE='cl-som-imx6'
-
-# Check the machine type specified
-VALID_MACHINE=$(ls sources/*/conf/machine/*.conf | awk -F"/" -v mach=${MACHINE}".conf" '(($0=$NF)&&($0~mach))')
-if [ "x$MACHINE" = "x" ] || [ "x$VALID_MACHINE" = "x" ]; then
-    echo -e "\nThe \$MACHINE you have specified ($MACHINE) is not supported by this build setup"
-    usage && clean_up
-    ${EXIT} 1
+if [ ! -e $1/conf/local.conf.sample ]; then
+    build_dir_setup_enabled="true"
 else
-    if [ ! -e $1/conf/local.conf.sample ]; then
-        echo "Configuring for ${MACHINE}"
-    fi
+    build_dir_setup_enabled="false"
 fi
 
-if [ -z "$SDKMACHINE" ]; then
-    SDKMACHINE='i686'
+[ -z "$MACHINE" ] && MACHINE='cl-som-imx6'
+[ -z "$DISTRO" ] && DISTRO='fslc-x11'
+[ -z "$SDKMACHINE" ] && SDKMACHINE='i686'
+
+if [ "$build_dir_setup_enabled" = "true" ] && [ -z "$MACHINE" ]; then
+    usage
+    echo -e "ERROR: You must set MACHINE when creating a new build directory."
+    clean_up
+    ${EXIT} 1
 fi
 
-if [ -z "$DISTRO" ]; then
-    DISTRO='poky'
+if [ "$build_dir_setup_enabled" = "true" ] && [ -z "$DISTRO" ]; then
+    usage
+    echo -e "ERROR: You must set DISTRO when creating a new build directory."
+    clean_up
+    ${EXIT} 1
 fi
 
 OEROOT=$PWD/sources/poky
 if [ -e $PWD/sources/oe-core ]; then
     OEROOT=$PWD/sources/oe-core
-fi
-
-# Ensure all files in sources/base are kept in sync with project root
-updated=
-for f in $CWD/sources/base/*; do
-    file="$(basename $f)"
-    if [ "$file" = "conf" ] || echo $file | grep -q '~$'; then
-        continue
-    fi
-
-    if ! cmp -s "$file" "$f"; then
-        updated="true"
-        [ -e $file ] && chmod u+w $file
-        cp $f $file
-    fi
-done
-if [ "$updated" = "true" ]; then
-    echo "The project root content has been updated. Please run '$PROGNAME' again."
-    ${EXIT}
 fi
 
 . $OEROOT/oe-init-build-env $CWD/$1 > /dev/null
@@ -124,7 +158,7 @@ fi
 export PATH="`echo $PATH | sed 's/\(:.\|:\)*:/:/g;s/^.\?://;s/:.\?$//'`"
 
 generated_config=
-if [ ! -e conf/local.conf.sample ]; then
+if [ "$build_dir_setup_enabled" = "true" ]; then
     mv conf/local.conf conf/local.conf.sample
 
     # Generate the local.conf based on the Yocto defaults
