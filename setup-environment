@@ -18,7 +18,7 @@
 # Copyright (C) 2013 Freescale Semiconductor, Inc.
 
 CWD=$(pwd)
-PROGNAME=$0
+PROGNAME=${BASH_SOURCE[0]}
 [ $(basename -- $BASH_SOURCE) == $(basename -- $0) ] && EXIT="exit" || EXIT="return"
 
 if [ "$(whoami)" = "root" ]; then
