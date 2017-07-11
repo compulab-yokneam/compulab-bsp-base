@@ -1,8 +1,8 @@
 #!/bin/bash
 
 CWD=$(pwd)
-PROGNAME=$0
-[ $(basename $BASH_SOURCE) == $(basename $0) ] && EXIT="exit" || EXIT="return"
+PROGNAME=${BASH_SOURCE[0]}
+[ $(basename -- $BASH_SOURCE) == $(basename -- $0) ] && EXIT="exit" || EXIT="return"
 
 if [ "$(whoami)" = "root" ]; then
     echo "ERROR: do not use the BSP as root. Exiting..."
@@ -187,7 +187,7 @@ your images, you need to read and accept the following...
 
 EOF
 
-    sleep 4
+    sleep 2
 
     more -d $CWD/sources/meta-fsl-arm/EULA
     echo
