@@ -67,6 +67,8 @@ do
 done
 
 [ -z "$MACHINE" ] && MACHINE='cl-som-imx6'
+[ -z "$DISTRO" ] && DISTRO='fsl-imx-x11'
+[ -z "$SDKMACHINE" ] && SDKMACHINE='i686'
 
 # Check the machine type specified
 VALID_MACHINE=$(ls sources/*/conf/machine/*.conf | awk -F"/" -v mach=${MACHINE}".conf" '(($0=$NF)&&($0~mach))')
@@ -78,14 +80,6 @@ else
     if [ ! -e $1/conf/local.conf.sample ]; then
         echo "Configuring for ${MACHINE}"
     fi
-fi
-
-if [ -z "$SDKMACHINE" ]; then
-    SDKMACHINE='i686'
-fi
-
-if [ -z "$DISTRO" ]; then
-    DISTRO='poky'
 fi
 
 OEROOT=$PWD/sources/poky
