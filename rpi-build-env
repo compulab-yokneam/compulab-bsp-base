@@ -17,7 +17,9 @@ eof
 
 sed -i '/^MACHINE ?=.*/d' conf/local.conf
 
-cat << eof >>conf/local.conf
+cat << eof >> conf/local.conf
 MACHINE ?= "raspberrypi4-64"
 LICENSE_FLAGS_ACCEPTED = "synaptics-killswitch"
 eof
+
+awk -i inplace  '!/^#/&&($NF)' conf/local.conf
