@@ -15,4 +15,9 @@ BBLAYERS += " \${BSPDIR}/sources/meta-openembedded/meta-multimedia "
 BBLAYERS += " \${BSPDIR}/sources/meta-raspberrypi "
 eof
 
-sed -i 's/\(MACHINE ??\).*/\1="raspberrypi3"/g' conf/local.conf
+sed -i '/^MACHINE ?=.*/d' conf/local.conf
+
+cat << eof >>conf/local.conf
+MACHINE ?= "raspberrypi4-64"
+LICENSE_FLAGS_ACCEPTED = "synaptics-killswitch"
+eof
