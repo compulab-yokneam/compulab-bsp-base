@@ -21,7 +21,7 @@ sed -i '/^$/d;/^#/d;/^MACHINE/d' conf/local.conf
 sed -i '1 i MACHINE ?= "raspberrypi4-64"' conf/local.conf
 
 cat << eof >> conf/local.conf
-DL_DIR ?= "${BSPDIR}/downloads/"
+DL_DIR ?= "\${BSPDIR}/downloads/"
 
 LICENSE_FLAGS_ACCEPTED = "synaptics-killswitch"
 
