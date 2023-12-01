@@ -17,11 +17,14 @@ BBLAYERS += " \${BSPDIR}/sources/meta-openembedded/meta-multimedia "
 BBLAYERS += " \${BSPDIR}/sources/meta-raspberrypi "
 eof
 
-sed -i '/^MACHINE ?=.*/d' conf/local.conf
+sed -i '/^$/d;/^#/d;/^MACHINE/d' conf/local.conf
+sed -i '1 i MACHINE ?= "raspberrypi4-64"' conf/local.conf
 
 cat << eof >> conf/local.conf
-MACHINE ?= "raspberrypi4-64"
-LICENSE_FLAGS_ACCEPTED = "synaptics-killswitch"
-eof
+DL_DIR ?= "${BSPDIR}/downloads/"
 
-awk -i inplace  '!/^#/&&($NF)' conf/local.conf
+LICENSE_FLAGS_ACCEPTED = "synaptics-killswitch"
+
+PACKAGE_CLASSES = "package_deb"
+EXTRA_IMAGE_FEATURES += "package-management"
+eof
